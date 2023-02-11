@@ -1,0 +1,6 @@
+aiohttp
+aiofiles
+pydantic
+py-cord
+orjson
+click
