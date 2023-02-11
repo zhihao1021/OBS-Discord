@@ -1,9 +1,10 @@
 from asyncio import CancelledError, get_event_loop, new_event_loop, ProactorEventLoop, Queue, set_event_loop, sleep as asleep, Task
 from base64 import b64encode
-from hashlib import sha256
+from hashlib import sha256, sha1
 from threading import Thread
+from time import time
+from random import random
 from typing import Any, Optional, Union
-from uuid import uuid1
 
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.typedefs import DEFAULT_JSON_DECODER, DEFAULT_JSON_ENCODER, JSONDecoder, JSONEncoder
@@ -16,7 +17,7 @@ class RequestStatus(BaseModel):
 
 class RequestData(BaseModel):
     requestType: str
-    requestId: str=Field(default_factory=lambda: str(uuid1()))
+    requestId: str=Field(default_factory=lambda: sha1(str(time() * random()).encode()).hexdigest())
     requestData: Optional[dict[str, Any]]=None
 
 class ResponseData(BaseModel):
@@ -84,6 +85,7 @@ class OBSWebSocket:
         while True:
             try:
                 raw_data: dict = await self.ws.receive_json()
+                print(raw_data)
                 if raw_data["op"] != 7:
                     continue
                 data = ResponseData(**raw_data["d"])
@@ -109,6 +111,7 @@ class OBSWebSocket:
         await self.send_queue.put(data)
         while not (result := self.responses.get(data.requestId)):
             await asleep(0.01)
+        del self.responses[data.requestId]
         return result
     
     async def connect(self):

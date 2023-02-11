@@ -45,5 +45,6 @@ class Recorder:
             return False
         await RecordRequests.StartRecord(self.obs)
         await asleep(10)
+        path = await RecordRequests.StopRecord(self.obs)
         self.__logger.info("Test Record... Success.")
-        return await RecordRequests.StopRecord(self.obs)
+        return path
