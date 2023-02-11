@@ -29,15 +29,15 @@ async def main():
             else:
                 c += 1
 
-            if w and c > 25:
-                res = RECORDER.stop_record()
+            if w and c > 50:
+                res = await RECORDER.stop_record()
                 if res:
                     await FILE_QUEUE.put(res)
                 s = False
                 w = False
 
             if w and not s:
-                RECORDER.start_record()
+                await RECORDER.start_record()
                 s = True
             await asleep(0.2)
         except CancelledError:
