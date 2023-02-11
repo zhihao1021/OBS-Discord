@@ -12,7 +12,6 @@ class RequestStatus(BaseModel):
 
 class ResponseData(BaseModel):
     requestType: str
-    requestId: str
     requestStatus: RequestStatus
     responseData: Optional[dict[str, Any]]=None
 
@@ -34,7 +33,11 @@ class OBSWebSocket:
         ret = await self.ws.call(request)
         result = None
         if ret:
-            result = ResponseData(**ret.responseData)
+            result = ResponseData(**{
+                "requestType": ret.requestType,
+                "requestStatus": ret.requestStatus,
+                "responseData": ret.responseData
+            })
         return result
     
     async def connect(self):
