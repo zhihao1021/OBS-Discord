@@ -1,6 +1,6 @@
-from swap import FILE_QUEUE, RECORDER
+from swap import FILE_QUEUE
 from configs import DISCORD_CONFIG
-from utils import Thread, Json
+from utils import Thread
 
 from asyncio import all_tasks, CancelledError, create_task, gather, get_event_loop, sleep as asleep
 from io import BytesIO
@@ -11,7 +11,6 @@ from traceback import format_exception as os_format_exception, format_exc
 from typing import Optional
 
 from aiofiles import open as aopen
-from aiohttp import ClientSession
 from discord import ApplicationContext, DiscordException, File, Intents
 from discord.ext.bridge import Bot
 from discord.ext.commands import CommandError, Context, when_mentioned_or
@@ -42,7 +41,6 @@ class DiscordBot(Bot):
 
             self.loop = get_event_loop()
             self.loop.create_task(self.send_video())
-            self.loop.create_task(self.crawer())
             
             self.channel = self.get_channel(DISCORD_CONFIG.channel)
         else:
@@ -68,40 +66,6 @@ class DiscordBot(Bot):
                 io.seek(0)
                 await self.channel.send(content="People Detect!", file=File(io, file_name[1]))
                 self.__logger.info("Send File Successful!")
-
-    async def crawer(self):
-        client = ClientSession()
-
-        w = False
-        s = False
-        c = 0
-        while True:
-            try:
-                res = await client.get("http://localhost:8080/face-data")
-                data = await res.json(loads=Json.loads)
-                if len(data) != 0:
-                    if not w:
-                        MAIN_LOGGER.warning(f"Detect People: {len(data)}")
-                    c = 0
-                    w = True
-                else:
-                    c += 1
-
-                if w and c > 25:
-                    res = RECORDER.stop_record()
-                    if res:
-                        await FILE_QUEUE.put(res)
-                    s = False
-                    w = False
-
-                if w and not s:
-                    RECORDER.start_record()
-                    s = True
-                await asleep(0.2)
-            except CancelledError:
-                break
-
-        await client.close()
 
     # Log Handler
     async def on_command(self, ctx: Context):
