@@ -44,8 +44,6 @@ class OBSWebSocket:
         await self.ws.connect()
         await self.ws.wait_until_identified()
 
-        await self.ws.receive()
-
         self.connected = True
     
     async def close(self):
