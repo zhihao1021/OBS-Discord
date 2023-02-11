@@ -4,8 +4,12 @@ from swap import RECORDER, FILE_QUEUE
 from utils import Json
 
 from asyncio import CancelledError, set_event_loop_policy, sleep as asleep, WindowsSelectorEventLoopPolicy, run
+from logging import getLogger
 
 from aiohttp import ClientSession
+
+LOGGER = getLogger("main")
+
 
 async def main():
     client = ClientSession()
@@ -18,10 +22,13 @@ async def main():
             res = await client.get("http://localhost:8080/face-data")
             data = await res.json(loads=Json.loads)
             if len(data) != 0:
+                if not w:
+                    LOGGER.warning(f"Detect People: {len(data)}")
                 c = 0
                 w = True
             else:
                 c += 1
+
             if w and c > 25:
                 res = RECORDER.stop_record()
                 if res:
@@ -29,7 +36,6 @@ async def main():
                 s = False
                 w = False
 
-            
             if w and not s:
                 RECORDER.start_record()
                 s = True
