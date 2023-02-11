@@ -35,7 +35,7 @@ class OBSWebSocket:
         if ret:
             result = ResponseData(**{
                 "requestType": ret.requestType,
-                "requestStatus": ret.requestStatus,
+                "requestStatus": ret.requestStatus.__dict__,
                 "responseData": ret.responseData
             })
         return result
