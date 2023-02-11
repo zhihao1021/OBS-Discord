@@ -85,7 +85,6 @@ class OBSWebSocket:
         while True:
             try:
                 raw_data: dict = await self.ws.receive_json()
-                print(raw_data)
                 if raw_data["op"] != 7:
                     continue
                 data = ResponseData(**raw_data["d"])
@@ -93,6 +92,8 @@ class OBSWebSocket:
                 self.responses[uuid] = data
             except CancelledError:
                 return
+            except RuntimeError:
+                await asleep(0.5)
     
     async def __send_task(self):
         while True:
