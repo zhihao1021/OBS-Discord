@@ -7,6 +7,7 @@ from io import BytesIO
 from logging import getLogger
 from os import stat
 from os.path import split
+from subprocess import run
 from traceback import format_exception as os_format_exception, format_exc
 from typing import Optional
 
@@ -50,22 +51,25 @@ class DiscordBot(Bot):
         self.__logger.warning(f"Discord Bot {self.user} Disconnect.")
 
     async def send_video(self):
+        def scale_file(path):
+            run("ffmpeg -i \"{}\" -fs 8M -c copy temp.mp4".format(path))
         while True:
             file_path = await FILE_QUEUE.get()
             file_size = stat(file_path).st_size
             self.__logger.info("Get File: {}".format(file_path))
+            self.__logger.info("Send File...")
+            file_name = split(file_path)[0]
             if file_size > 8000000:
-                self.__logger.warning("File {} too big to send...".format(file_path))
-                await self.channel.send("File {} too big to send...".format(file_path))
-            else:
-                self.__logger.info("Send File...")
-                file_name = split(file_path)
-                io = BytesIO(b"")
-                async with aopen(file_path, mode="rb") as video:
-                    io.write(await video.read())
-                io.seek(0)
-                await self.channel.send(content="People Detect!", file=File(io, file_name[1]))
-                self.__logger.info("Send File Successful!")
+                self.__logger.warning("File {} too big to send... scale file...".format(file_path))
+                self.loop.run_in_executor(None, scale_file, file_path)
+                file_path = "temp.mp4"
+
+            io = BytesIO(b"")
+            async with aopen(file_path, mode="rb") as video:
+                io.write(await video.read())
+            io.seek(0)
+            await self.channel.send(content="People Detect!", file=File(io, file_name))
+            self.__logger.info("Send File Successful!")
 
     # Log Handler
     async def on_command(self, ctx: Context):

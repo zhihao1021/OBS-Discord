@@ -15,7 +15,6 @@ async def main():
     client = ClientSession()
 
     w = False
-    s = False
     c = 0
     while True:
         try:
@@ -24,22 +23,19 @@ async def main():
             if len(data) != 0:
                 if not w:
                     LOGGER.warning(f"Detect People: {len(data)}")
+                    await RECORDER.start_record()
                 c = 0
                 w = True
             else:
+                await asleep(0.1)
                 c += 1
 
-            if w and c > 50:
+            if w and c > 20:
                 res = await RECORDER.stop_record()
                 if res:
                     await FILE_QUEUE.put(res)
-                s = False
                 w = False
 
-            if w and not s:
-                await RECORDER.start_record()
-                s = True
-            await asleep(0.2)
         except CancelledError:
             break
 
