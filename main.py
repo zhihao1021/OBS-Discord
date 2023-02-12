@@ -21,9 +21,11 @@ async def main():
         try:
             res = await client.get("http://localhost:8080/face-data")
             data = await res.json(loads=Json.loads)
-            if len(data) != 0:
+            det = len(data)
+            print(f"People num: {det}", end="\r")
+            if det != 0:
                 if not w:
-                    LOGGER.warning(f"Detect People: {len(data)}")
+                    LOGGER.warning(f"Detect People: {det}")
                     await RECORDER.start_record()
                 c = time()
                 w = True
