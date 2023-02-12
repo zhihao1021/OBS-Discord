@@ -51,8 +51,8 @@ class DiscordBot(Bot):
         self.__logger.warning(f"Discord Bot {self.user} Disconnect.")
 
     async def send_video(self):
-        def scale_file(path):
-            run("ffmpeg -i \"{}\" -fs 8M -c copy temp.mp4".format(path))
+        def scale_file():
+            run("ffmpeg -i \"{}\" -fs 8M -c copy temp.mp4".format(file_path))
         while True:
             file_path = await FILE_QUEUE.get()
             file_size = stat(file_path).st_size
@@ -61,7 +61,7 @@ class DiscordBot(Bot):
             file_name = split(file_path)[0]
             if file_size > 8000000:
                 self.__logger.warning("File {} too big to send... scale file...".format(file_path))
-                self.loop.run_in_executor(None, scale_file, file_path)
+                self.loop.run_in_executor(None, scale_file)
                 file_path = "temp.mp4"
 
             io = BytesIO(b"")
