@@ -58,7 +58,7 @@ class DiscordBot(Bot):
             file_size = stat(file_path).st_size
             self.__logger.info("Get File: {}".format(file_path))
             self.__logger.info("Send File...")
-            file_name = split(file_path)[0]
+            file_name = split(file_path)[1]
             if file_size > 8000000:
                 self.__logger.warning("File {} too big to send... scale file...".format(file_path))
                 self.loop.run_in_executor(None, scale_file)
