@@ -1,5 +1,6 @@
 from configs import logger_init
 from discord_bot import DiscordBot
+from time import time
 from swap import RECORDER, FILE_QUEUE
 from utils import Json
 
@@ -15,7 +16,7 @@ async def main():
     client = ClientSession()
 
     w = False
-    c = 0
+    c = time()
     while True:
         try:
             res = await client.get("http://localhost:8080/face-data")
@@ -24,13 +25,12 @@ async def main():
                 if not w:
                     LOGGER.warning(f"Detect People: {len(data)}")
                     await RECORDER.start_record()
-                c = 0
+                c = time()
                 w = True
             else:
                 await asleep(0.1)
-                c += 1
 
-            if w and c > 20:
+            if w and time() - c > 2:
                 res = await RECORDER.stop_record()
                 if res:
                     await FILE_QUEUE.put(res)
