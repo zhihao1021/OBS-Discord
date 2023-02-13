@@ -5,16 +5,14 @@ from utils import Thread
 from asyncio import all_tasks, CancelledError, create_task, gather, get_event_loop, sleep as asleep
 from io import BytesIO
 from logging import getLogger
-from os import stat
 from os.path import split
 from subprocess import run
 from traceback import format_exception as os_format_exception, format_exc
-from typing import Optional
 
 from aiofiles import open as aopen
-from discord import ApplicationContext, DiscordException, File, Intents
+from discord import File, Intents
 from discord.ext.bridge import Bot
-from discord.ext.commands import CommandError, Context, when_mentioned_or
+from discord.ext.commands import when_mentioned_or
 
 
 MAIN_LOGGER = getLogger("main")
@@ -52,58 +50,23 @@ class DiscordBot(Bot):
 
     async def send_video(self):
         def scale_file():
-            run("ffmpeg -i \"{}\" -fs 8M -c copy temp.mp4".format(file_path))
+            run("ffmpeg -i \"{}\" -ss 0 -fs 8M -c copy temp.mp4".format(file_path))
+
         while True:
             file_path = await FILE_QUEUE.get()
-            file_size = stat(file_path).st_size
-            self.__logger.info("Get File: {}".format(file_path))
-            self.__logger.info("Send File...")
-            file_name = split(file_path)[1]
-            if file_size > 8000000:
-                self.__logger.warning("File {} too big to send... scale file...".format(file_path))
-                self.loop.run_in_executor(None, scale_file)
-                file_path = "temp.mp4"
 
+            file_name = split(file_path)[1]
+            self.__logger.info("Get File: {}".format(file_path))
+            self.__logger.warning("Scale file...".format(file_path))
+            self.loop.run_in_executor(None, scale_file)
+
+            self.__logger.info("Send File...")
             io = BytesIO(b"")
-            async with aopen(file_path, mode="rb") as video:
+            async with aopen("temp.mp4", mode="rb") as video:
                 io.write(await video.read())
             io.seek(0)
             await self.channel.send(content="People Detect!", file=File(io, file_name))
             self.__logger.info("Send File Successful!")
-
-    # Log Handler
-    async def on_command(self, ctx: Context):
-        self.__logger.info(f"[Command] {ctx.author}: {ctx.message.content}")
-
-    async def on_application_command(self, ctx: ApplicationContext):
-        self.__logger.info(
-            f"[Command] {ctx.author}: {ctx.command.qualified_name}")
-
-    # Error Handler
-    async def on_error(self, event_method: str, *args, **kwargs) -> None:
-        message = f"Error in {event_method}\n"
-        message += format_exc()
-        self.__logger.error(message)
-
-    async def on_command_error(self, ctx: Context, exception: CommandError) -> None:
-        res = "".join(format_exception(exception))
-        self.__logger.error(res)
-        error_message = "Error:```" + res + "```"
-        if len(error_message) >= 2000:
-            io = BytesIO(res.encode())
-            await ctx.reply(content="Error:", file=File(io, filename="error.log"))
-        else:
-            await ctx.reply(content=error_message, mention_author=False)
-
-    async def on_application_command_error(self, ctx: ApplicationContext, exception: DiscordException) -> None:
-        res = "".join(format_exception(exception))
-        self.__logger.error(res)
-        error_message = "Error:```" + res + "```"
-        if len(error_message) >= 2000:
-            io = BytesIO(res.encode())
-            await ctx.respond(content="Error:", file=File(io, filename="error.log"), ephemeral=True)
-        else:
-            await ctx.respond(content=error_message, ephemeral=True)
 
     def __thread_job(self):
         try:

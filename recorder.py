@@ -1,7 +1,7 @@
 from configs import OBS_CONFIG
 from obs_websocket import RecordRequests, RequestCode, OBSWebSocket
 
-from asyncio import sleep as asleep
+from asyncio import sleep as asleep, run
 from logging import getLogger
 from typing import Union
 
@@ -11,11 +11,14 @@ class Recorder:
         self.obs = OBSWebSocket(**OBS_CONFIG.dict())
         self.connect = False
         self.__logger = getLogger("obs")
-
-    async def start_record(self) -> bool:
+        run(self.init())
+    
+    async def init(self):
         if not self.connect:
             await self.obs.connect()
             self.connect = True
+
+    async def start_record(self) -> bool:
         status = await RecordRequests.GetRecordStatus(self.obs)
         if status:
             self.__logger.warning("Start Record... Fail.")
@@ -24,9 +27,6 @@ class Recorder:
         await RecordRequests.StartRecord(self.obs)
 
     async def stop_record(self) -> Union[str, bool]:
-        if not self.connect:
-            await self.obs.connect()
-            self.connect = True
         status = await RecordRequests.GetRecordStatus(self.obs)
         if status:
             self.__logger.info("Stop Record... Success.")
@@ -35,9 +35,6 @@ class Recorder:
         return False
 
     async def record_test(self) -> Union[str, bool]:
-        if not self.connect:
-            await self.obs.connect()
-            self.connect = True
         self.__logger.info("Start Test.")
         status = await RecordRequests.GetRecordStatus(self.obs)
         if status:
