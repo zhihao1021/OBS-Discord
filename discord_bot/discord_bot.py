@@ -52,7 +52,7 @@ class DiscordBot(Bot):
 
     async def send_video(self):
         def scale_file():
-            run("ffmpeg -i \"{}\" -fs 8M -c copy temp.mp4".format(file_path))
+            run("ffmpeg -i \"{}\" -fs 8M -c copy temp.mp4 -y".format(file_path))
         while True:
             file_path = await FILE_QUEUE.get()
             file_size = stat(file_path).st_size
