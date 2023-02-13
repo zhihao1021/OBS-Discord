@@ -11,7 +11,6 @@ class Recorder:
         self.obs = OBSWebSocket(**OBS_CONFIG.dict())
         self.connect = False
         self.__logger = getLogger("obs")
-        run(self.init())
     
     async def init(self):
         if not self.connect:

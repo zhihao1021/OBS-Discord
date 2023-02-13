@@ -14,6 +14,7 @@ LOGGER = getLogger("main")
 
 async def main():
     client = ClientSession()
+    await RECORDER.init()
 
     w = False
     c = time()
