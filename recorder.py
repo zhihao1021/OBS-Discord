@@ -9,15 +9,10 @@ from typing import Union
 class Recorder:
     def __init__(self) -> None:
         self.obs = OBSWebSocket(**OBS_CONFIG.dict())
-        self.connect = False
         self.__logger = getLogger("obs")
-    
-    async def init(self):
-        if not self.connect:
-            await self.obs.connect()
-            self.connect = True
 
     async def start_record(self) -> bool:
+        await self.obs.connect()
         status = await RecordRequests.GetRecordStatus(self.obs)
         if status:
             self.__logger.warning("Start Record... Fail.")
@@ -26,6 +21,7 @@ class Recorder:
         await RecordRequests.StartRecord(self.obs)
 
     async def stop_record(self) -> Union[str, bool]:
+        await self.obs.connect()
         status = await RecordRequests.GetRecordStatus(self.obs)
         if status:
             self.__logger.info("Stop Record... Success.")
@@ -34,6 +30,7 @@ class Recorder:
         return False
 
     async def record_test(self) -> Union[str, bool]:
+        await self.obs.connect()
         self.__logger.info("Start Test.")
         status = await RecordRequests.GetRecordStatus(self.obs)
         if status:

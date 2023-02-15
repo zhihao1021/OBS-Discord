@@ -14,7 +14,6 @@ LOGGER = getLogger("main")
 
 async def main():
     client = ClientSession()
-    await RECORDER.init()
 
     w = False
     c = time()
@@ -31,7 +30,7 @@ async def main():
                 c = time()
                 w = True
             else:
-                await asleep(0.1)
+                await asleep(0.5)
 
             if w and time() - c > 2:
                 res = await RECORDER.stop_record()
