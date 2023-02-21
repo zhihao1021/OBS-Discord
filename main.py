@@ -1,6 +1,6 @@
 from configs import logger_init
 from discord_bot import DiscordBot
-from time import time
+from time import time, sleep
 from swap import RECORDER, FILE_QUEUE
 from utils import Json
 
@@ -30,13 +30,14 @@ async def main():
                 c = time()
                 w = True
             else:
-                await asleep(0.5)
+                await asleep(0.2)
 
-            if w and time() - c > 2:
+            if w and time() - c > 3:
                 res = await RECORDER.stop_record()
                 if res:
                     await FILE_QUEUE.put(res)
                 w = False
+                await asleep(1)
 
         except CancelledError:
             break
@@ -49,4 +50,7 @@ if __name__ == "__main__":
     bot = DiscordBot()
     bot.startup()
 
-    run(main())
+    while True:
+        sleep(1)
+
+    # run(main())

@@ -1,4 +1,5 @@
-from swap import FILE_QUEUE
+from swap import FILE_QUEUE, RECORDER
+from utils import Json
 from configs import DISCORD_CONFIG
 from utils import Thread
 
@@ -7,9 +8,11 @@ from io import BytesIO
 from logging import getLogger
 from os.path import split
 from subprocess import run
+from time import time
 from traceback import format_exception as os_format_exception, format_exc
 
 from aiofiles import open as aopen
+from aiohttp import ClientSession
 from discord import File, Intents
 from discord.ext.bridge import Bot
 from discord.ext.commands import when_mentioned_or
@@ -20,6 +23,38 @@ MAIN_LOGGER = getLogger("main")
 def format_exception(exc: Exception):
     return os_format_exception(type(exc), exc, exc.__traceback__)
 
+
+async def rec():
+    client = ClientSession()
+
+    w = False
+    c = time()
+    while True:
+        try:
+            res = await client.get("http://localhost:8080/face-data")
+            data = await res.json(loads=Json.loads)
+            det = len(data)
+            print(f"People num: {det}", end="\r")
+            if det != 0:
+                if not w:
+                    MAIN_LOGGER.warning(f"Detect People: {det}")
+                    await RECORDER.start_record()
+                c = time()
+                w = True
+            else:
+                await asleep(0.2)
+
+            if w and time() - c > 3:
+                res = await RECORDER.stop_record()
+                if res:
+                    await FILE_QUEUE.put(res)
+                w = False
+                await asleep(1)
+
+        except CancelledError:
+            break
+
+    await client.close()
 
 class DiscordBot(Bot):
     def __init__(self, *args, **kwargs):
@@ -38,8 +73,9 @@ class DiscordBot(Bot):
             self.__first_connect = False
             self.__logger.warning(f"Discord Bot {self.user} Start.")
 
-            self.loop = get_event_loop()
+            # self.loop = get_event_loop()
             self.loop.create_task(self.send_video())
+            self.loop.create_task(rec())
             
             self.channel = self.get_channel(DISCORD_CONFIG.channel)
         else:
