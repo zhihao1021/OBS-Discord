@@ -8,11 +8,13 @@ from io import BytesIO
 from logging import getLogger
 from os.path import split
 from subprocess import run
-from time import time
+from time import time as t_time
+from datetime import datetime, time, timezone, timedelta
 from traceback import format_exception as os_format_exception, format_exc
 
 from aiofiles import open as aopen
 from aiohttp import ClientSession
+from aiohttp.client_exceptions import ClientError
 from discord import File, Intents
 from discord.ext.bridge import Bot
 from discord.ext.commands import when_mentioned_or
@@ -28,7 +30,8 @@ async def rec():
     client = ClientSession()
 
     w = False
-    c = time()
+    c = t_time()
+    s_time = t_time()
     while True:
         try:
             res = await client.get("http://localhost:8080/face-data")
@@ -37,15 +40,25 @@ async def rec():
             print(f"People num: {det}", end="\r")
             if det != 0:
                 if not w:
-                    MAIN_LOGGER.warning(f"Detect People: {det}")
                     await RECORDER.start_record()
-                c = time()
+                    MAIN_LOGGER.warning(f"Detect People: {det}")
+                    # 開燈
+                    # await client.get("http://localhost:8080/api/light-on")
+
+                if (t_time() - s_time > 5 or not w):
+                    now_time = datetime.now(timezone(timedelta(hours=8))).time()
+                    if now_time > time(17, 0, 0) or now_time < time(7, 30, 0):
+                        await client.get("http://localhost:8080/api/light-test?s=30&n=15")
+                    s_time = t_time()
+                c = t_time()
                 w = True
             else:
-                await asleep(0.2)
+                await asleep(0.1)
 
-            if w and time() - c > 3:
+            if w and t_time() - c > 3:
                 res = await RECORDER.stop_record()
+                # 關燈
+                # await client.get("http://localhost:8080/api/light-off")
                 if res:
                     await FILE_QUEUE.put(res)
                 w = False
@@ -53,6 +66,9 @@ async def rec():
 
         except CancelledError:
             break
+        except ClientError:
+            await asleep(1)
+            continue
 
     await client.close()
 

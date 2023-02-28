@@ -46,8 +46,8 @@ def bridge_command(**kwargs):
         return NewBridgeCommand(callback, **kwargs)
     return decorator
 
-async def response(ctx: BridgeContext, content: str):
+async def response(ctx: BridgeContext, content: str, **kwargs):
     if ctx.is_app:
-        return await ctx.respond(content, ephemeral=True)
+        return await ctx.respond(content, ephemeral=True, **kwargs)
     else:
-        return await ctx.respond(content, mention_author=False)
+        return await ctx.respond(content, mention_author=False, **kwargs)
