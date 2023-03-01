@@ -42,23 +42,29 @@ async def rec():
                 if not w:
                     await RECORDER.start_record()
                     MAIN_LOGGER.warning(f"Detect People: {det}")
+                    
                     # 開燈
-                    # await client.get("http://localhost:8080/api/light-on")
-
-                if (t_time() - s_time > 5 or not w):
                     now_time = datetime.now(timezone(timedelta(hours=8))).time()
-                    if now_time > time(17, 0, 0) or now_time < time(7, 30, 0):
-                        await client.get("http://localhost:8080/api/light-test?s=30&n=15")
-                    s_time = t_time()
+                    if now_time > time(17, 30, 0) or now_time < time(7, 30, 0):
+                        await client.get("http://localhost:8080/api/light-on")
+
                 c = t_time()
                 w = True
             else:
                 await asleep(0.1)
 
+                if t_time() - s_time > 60:
+                    now_time = datetime.now(timezone(timedelta(hours=8))).time()
+                    if now_time > time(20, 30, 0) or now_time < time(7, 30, 0) and not w:
+                        await client.get("http://localhost:8080/api/light-test?s=30&n=5")
+                    s_time = t_time()
+
             if w and t_time() - c > 3:
                 res = await RECORDER.stop_record()
+                
                 # 關燈
-                # await client.get("http://localhost:8080/api/light-off")
+                await client.get("http://localhost:8080/api/light-off")
+
                 if res:
                     await FILE_QUEUE.put(res)
                 w = False
