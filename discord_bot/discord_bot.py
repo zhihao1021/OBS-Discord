@@ -45,7 +45,7 @@ async def rec():
                     
                     # 開燈
                     now_time = datetime.now(timezone(timedelta(hours=8))).time()
-                    if now_time > time(17, 30, 0) or now_time < time(7, 30, 0):
+                    if now_time > time(18, 0, 0) or now_time < time(7, 30, 0):
                         await client.get("http://localhost:8080/api/light-on")
 
                 c = t_time()
@@ -53,7 +53,7 @@ async def rec():
             else:
                 await asleep(0.1)
 
-                if t_time() - s_time > 60:
+                if t_time() - s_time > 600:
                     now_time = datetime.now(timezone(timedelta(hours=8))).time()
                     if now_time > time(20, 30, 0) or now_time < time(7, 30, 0) and not w:
                         await client.get("http://localhost:8080/api/light-test?s=30&n=5")
